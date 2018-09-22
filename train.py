@@ -33,6 +33,7 @@ def train(model, img, sr_factor, num_batches, learning_rate, crop_size):
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     sampler = DataSampler(img, sr_factor, crop_size)
     model.cuda()
+    print('\n\n----------------------------------Training Progress---------------------------------')
     with tqdm.tqdm(total=num_batches, miniters=1, mininterval=0) as progress:
         for iter, (hr, lr) in enumerate(sampler.generate_data()):
             model.zero_grad()
@@ -43,9 +44,9 @@ def train(model, img, sr_factor, num_batches, learning_rate, crop_size):
             output = model(lr) + lr
             error = loss(output, hr)
 
-            cpu_loss = error.data.cpu().numpy()[0]
+            cpu_loss = error.data.cpu().numpy().reshape(1)[0]
 
-            progress.set_description("Iteration: {iter} Loss: {loss}, Learning Rate: {lr}".format( \
+            progress.set_description("Iteration: {iter} Loss: {loss:0.15f}, Learning Rate: {lr}".format( \
                 iter=iter, loss=cpu_loss, lr=learning_rate))
             progress.update()
 
@@ -102,7 +103,9 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    img = PIL.Image.open(args.img)
+    imgpath = "examples/lincoln.png"
+    img = PIL.Image.open(imgpath)
+    #img = PIL.Image.open(args.img)
     num_channels = len(np.array(img).shape)
     if num_channels == 3:
         model = ZSSRNet(input_channels = 3)
